@@ -15,7 +15,7 @@
 # missing length data from len.df (cant be all)
 
 
-## Linear predictors  ##
+## continuous predictors  ##
 
 ## Cat predictors
 
@@ -169,7 +169,7 @@ test_that(
       sp = "a", 
       age.df = df, 
       sample.groups = c("date","site"),   
-      fixed.effect = "linear",
+      fixed.effect = "continuous",
       predictors = "depth"
     ))
   })
@@ -180,7 +180,7 @@ test_that(
       sp = "a", 
       age.df = df, 
       sample.groups = c("date","site"),   
-      fixed.effect = "linear"
+      fixed.effect = "continuous"
     ))
   })
 
@@ -216,7 +216,7 @@ test_that(
       sp = "a", 
       age.df = df, 
       sample.groups = c("date","site"),   
-      fixed.effect = "linear",
+      fixed.effect = "continuous",
       category  = "cat_name"
     ))
   })
@@ -232,14 +232,14 @@ test_that(
       sp = "a", 
       age.df = df, 
       sample.groups = c("date","site"),   
-      fixed.effect = "linear",
+      fixed.effect = "continuous",
       category  = "cat_name"
     ))
   })
 
 test_that(
   paste0(
-    ".prep_stan_data returns an error when linear predictions are specified ",
+    ".prep_stan_data returns an error when continuous predictions are specified ",
     "but not possible due to random effect strucutre"
     ),{
     df <- .data_prep_test_helper()
@@ -334,7 +334,7 @@ test_that(".prep_stan_data returns predicotr data when specified",{
 
 test_that("stan_file returns an vb existing linear file", {
   
-  path <- .extract_stan_file("vb", "linear")
+  path <- .extract_stan_file("vb", "continuous")
   
   expect_true(file.exists(path))
   
@@ -359,7 +359,7 @@ test_that("stan_file returns an existing random effect file", {
 test_that("invalid model throws an error", {
   
   expect_error(
-    .extract_stan_file("fake_model", "linear")
+    .extract_stan_file("fake_model", "continuous")
   )
   
 })
