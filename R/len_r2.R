@@ -64,7 +64,7 @@ len_R2 <- function(
       ) %>% 
     dplyr::left_join(
       data,
-      by = dplyr::join_by(.data$sample_id, .data$age),
+      by = dplyr::join_by("sample_id", "age"),
       relationship = "many-to-many"
     )
   

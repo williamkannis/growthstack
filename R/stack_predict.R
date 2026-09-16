@@ -584,7 +584,7 @@ stack_predict <- function(
     out_df <- input.df %>% 
       dplyr::left_join(
         model.out,
-        by = dplyr::join_by(.data$group_id)
+        by = dplyr::join_by("group_id")
         )
   }  
   
