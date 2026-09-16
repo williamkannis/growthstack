@@ -56,10 +56,15 @@ len_R2 <- function(
   
   # Link predictions to actual data
   linked_df <- pred_df %>% 
-    dplyr::distinct(mod,sample_id,age,.keep_all = T) %>% 
+    dplyr::distinct(
+      .data$mod,
+      .data$sample_id,
+      .data$age,
+      .keep_all = T
+      ) %>% 
     dplyr::left_join(
       data,
-      by = dplyr::join_by(sample_id, age),
+      by = dplyr::join_by(.data$sample_id, .data$age),
       relationship = "many-to-many"
     )
   
@@ -73,7 +78,7 @@ len_R2 <- function(
   r2_list <- lapply(mods, function (x) {
     
     # subset data for select model
-    df <- linked_df %>% dplyr::filter(mod == x)
+    df <- linked_df %>% dplyr::filter(.data$mod == x)
     # if(stack) df <- linked_df 
     # if(!stack) df <- linked_df %>% dplyr::filter(mod == x)
     
@@ -82,7 +87,7 @@ len_R2 <- function(
     # if(sum.fun == "median") df$pred <- df$length_pred_median
     
     # Estimate r2
-    reg <- lm(pred ~ length,df)
+    reg <- stats::lm(pred ~ length,df)
     data.frame(
       model = x,
       r2 = summary(reg)$r.squared, 
@@ -95,8 +100,14 @@ len_R2 <- function(
   
   # Residuals
   res_df <- linked_df %>% 
-    dplyr::mutate(resid = length-pred) %>% 
-    dplyr::select(mod,age,length,pred,resid)
+    dplyr::mutate(resid = .data$length-.data$pred) %>% 
+    dplyr::select(
+      .data$mod,
+      .data$age,
+      .data$length,
+      .data$pred,
+      .data$resid
+      )
   
   out <- list(r2_df,res_df)
   names(out) <- c("rsquared","residuals")

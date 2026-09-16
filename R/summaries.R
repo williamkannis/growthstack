@@ -19,7 +19,6 @@
 #' Default is NULL.
 #' @param params Vector containing parameters to summarize c("mu","tau","beta",
 #' "sigma_length").
-
 #' 
 #' @details Posterior distribution for select parameters are extracted from a 
 #' list of models. Posterior distributions are summarized into median and 95% 
@@ -100,7 +99,7 @@ mean_ci_batch <- function(
   
   # Combine into one data.frame
   mean_ci_df <-mean_ci_list %>% 
-    purrr::reduce(left_join, by = "model")
+    purrr::reduce(dplyr::left_join, by = "model")
   
   # Format column names to match across data types
   colnames(mean_ci_df) <- gsub("g1|g2|g3","g",colnames(mean_ci_df))
@@ -108,7 +107,7 @@ mean_ci_batch <- function(
   
   if ("tau" %in% colnames(mean_ci_df)){
     mean_ci_df <- mean_ci_df %>% 
-      rename(tau_1 = tau)
+      dplyr::rename(tau_1 = .data$tau)
   }
   
   # Return dataframe
@@ -137,17 +136,17 @@ mean_ci_batch <- function(
   
   # Extract mean and 95 ci of parameter with single value (e.g., mu)
   if(out_dim == 1) {
-    estimate[1] <- median(mod_out)
-    estimate[2] <- quantile(mod_out, probs = ci[1])
-    estimate[3] <- quantile(mod_out, probs = ci[2])
+    estimate[1] <- stats::median(mod_out)
+    estimate[2] <- stats::quantile(mod_out, probs = ci[1])
+    estimate[3] <- stats::quantile(mod_out, probs = ci[2])
     
   } 
   
   # Extract mean if more than one value per parameter (e.g., beta[1-n])
   if (out_dim ==2) {
-    estimate[[1]] <- apply(mod_out,2,median)
-    estimate[[2]] <- apply(mod_out,2,quantile, probs = ci[1])
-    estimate[[3]] <- apply(mod_out,2,quantile, probs = ci[2])
+    estimate[[1]] <- apply(mod_out,2,stats::median)
+    estimate[[2]] <- apply(mod_out,2,stats::quantile, probs = ci[1])
+    estimate[[3]] <- apply(mod_out,2,stats::quantile, probs = ci[2])
     
   }
   
@@ -198,7 +197,7 @@ supp_table_format <- function(mod.df,mod.dir) {
   
   # Combine into single data.frame
   dplyr::bind_rows(format_list) %>% 
-    dplyr::arrange(match(mod,c("vb","gz","lg")))
+    dplyr::arrange(match(.data$mod,c("vb","gz","lg")))
 }
 
 .supp_table_format_helper <- function(mod.dir,mod.file) {
@@ -231,20 +230,28 @@ supp_table_format <- function(mod.df,mod.dir) {
   
   # Format for supp info table
   mod_summary %>% 
-    dplyr::select(mean,sd,`50%`,`2.5%`,`97.5%`,n_eff,Rhat) %>% 
+    dplyr::select(
+      .data$mean,
+      .data$sd,
+      .data$`50%`,
+      .data$`2.5%`,
+      .data$`97.5%`,
+      .data$n_eff,
+      .data$Rhat
+      ) %>% 
     tibble::rownames_to_column("parameter") %>% 
     dplyr::rename(
-      median = `50%`,
-      lwr = `2.5%`,
-      upr = `97.5%`
+      median = .data$`50%`,
+      lwr = .data$`2.5%`,
+      upr = .data$`97.5%`
     ) %>% 
     dplyr::filter(
-      parameter %in% params
+      .data$parameter %in% params
     ) %>% 
-    dplyr::arrange(match(parameter,params)) %>% 
+    dplyr::arrange(match(.data$parameter,params)) %>% 
     dplyr::mutate(
-      across(-parameter, round, digits = 3),
-      n_eff = round(n_eff,0),
+      dplyr::across(-.data$parameter, round, digits = 3),
+      n_eff = round(.data$n_eff,0),
       mod = mod_type,
     )
 }
@@ -282,8 +289,8 @@ beta_mean_ci_batch <- function(
   # Filter based on wt
   if(wt.cutoff){
     stack.df <-stack.df %>% 
-      dplyr::mutate(n_samp = stack_wt*1000) %>% 
-      dplyr::filter(n_samp >1)
+      dplyr::mutate(n_samp = .data$stack_wt*1000) %>% 
+      dplyr::filter(.data$n_samp >1)
   }
   
   # Load in model names
@@ -365,10 +372,9 @@ beta_mean_ci_batch <- function(
   # Extract mean and 95 ci of parameter with single value (e.g., mu)
   if(out_dim == 1) {
     estimate[1] <- paste0(param[1],"_1")
-    estimate[2] <- median(mod_out)
-    estimate[3] <- quantile(mod_out, probs = ci[1])
-    estimate[4] <- quantile(mod_out, probs = ci[2])
-    
+    estimate[2] <- stats::median(mod_out)
+    estimate[3] <- stats::quantile(mod_out, probs = ci[1])
+    estimate[4] <- stats::quantile(mod_out, probs = ci[2])
   } 
   
   # Extract mean if more than one value per parameter (e.g., beta[1-n])
@@ -377,9 +383,9 @@ beta_mean_ci_batch <- function(
       1:ncol(mod_out), 
       function(x) paste(param[1],x,sep="_")
       )
-    estimate[[2]] <- apply(mod_out,2,median)
-    estimate[[3]] <- apply(mod_out,2,quantile, probs = ci[1])
-    estimate[[4]] <- apply(mod_out,2,quantile, probs = ci[2])
+    estimate[[2]] <- apply(mod_out,2,stats::median)
+    estimate[[3]] <- apply(mod_out,2,stats::quantile, probs = ci[1])
+    estimate[[4]] <- apply(mod_out,2,stats::quantile, probs = ci[2])
     out <- as.data.frame(do.call(cbind,estimate))
     colnames(out) <- c("parameter","mean","lwr","upr")
   }

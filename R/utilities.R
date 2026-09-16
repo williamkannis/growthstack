@@ -61,9 +61,9 @@
   
   # Calculate summary statistic and 95 CI interval of estimates
   summary <- as.data.frame(apply(array,c(1,2), fun))
-  uprs <- as.data.frame(apply(array,c(1,2), quantile, probs=ci[2], na.rm=T))
-  lwrs <- as.data.frame(apply(array,c(1,2), quantile, probs=ci[1], na.rm=T))
-  
+  uprs <- as.data.frame(apply(array,c(1,2), stats::quantile, probs=ci[2], na.rm=T))
+  lwrs <- as.data.frame(apply(array,c(1,2), stats::quantile, probs=ci[1], na.rm=T))
+
   # Merge into one summary table
   summary %>%
     dplyr::left_join(

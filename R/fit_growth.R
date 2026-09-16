@@ -15,15 +15,15 @@
 #' individual sampling event (e.g site and date) used for random effects. Used
 #' to create a single sampling identifier.
 #' @param category Name of column containing categorical predictor variable. 
-#' Should contain category as a factor. Only necessary if fixed.effects == 
-#' "category" Default is NULL.
+#' Should contain category as a factor. Only necessary if fixed.effect == 
+#' "categorical" Default is NULL.
 #' @param predictors Vector with column names of chosen predictor variables. 
-#' Only necessary if fixed.effects == "continuous". Default is NULL
+#' Only necessary if fixed.effect == "continuous". Default is NULL
 #' @param scale T or F: scale and center predictors? Only necessary if 
-#' fixed.effects == "continuous". Default is T.
+#' fixed.effect == "continuous". Default is T.
 #' @param linear.predictions T or F. Create predictions of growth parameters and
 #' and rates across the range of linear predictor variables? Only possible if 
-#' fixed.effects == "continuous". Default is F.
+#' fixed.effect == "continuous". Default is F.
 #' @param pred.len Number of predictions to make along range of predictor 
 #' variables. Only necessary if linear.predictions == T. Default is 100.
 #' @param sp Character containing species name for data filtering.
@@ -120,7 +120,7 @@ fit_growth <- function(
   )
   data <- input_list$stan_data
   
-  # Load in appropiate stan scripts
+  # Load in appropriate stan scripts
   mods <- sapply(mod.form,.extract_stan_file,fixed.effect)
   
   
@@ -208,11 +208,15 @@ fit_growth <- function(
   
   # Filter to species of interest and create numeric sample event ids
   sp_df <- age.df %>% 
-    dplyr::filter(species == sp) %>% 
-    dplyr::group_by(across(tidyr::all_of(sample.groups))) %>% 
+    dplyr::filter(.data$species == sp) %>% 
+    dplyr::group_by(
+      dplyr::across(
+        tidyr::all_of(sample.groups)
+        )
+      ) %>% 
     dplyr::mutate(sample_id = dplyr::cur_group_id()) %>% 
     dplyr::ungroup() %>% 
-    dplyr::arrange(sample_id)
+    dplyr::arrange(.data$sample_id)
   
   # Create table to bridge species specific sample_ids to years and sites
   sample_id_bridge <- sp_df %>% 
@@ -226,7 +230,7 @@ fit_growth <- function(
   # If no size structure data.set provided, use lengths from age.df
   if(is.null(len.df)) len.df <- age.df
   length_m <- len.df %>% 
-    dplyr::filter(species == sp) %>% 
+    dplyr::filter(.data$species == sp) %>% 
     dplyr::summarise(n = mean(length,na.rm = T)) %>% 
     dplyr::pull()
   
@@ -261,7 +265,7 @@ fit_growth <- function(
   sample_df<- sp_df %>% 
     dplyr::select(tidyr::all_of(c("sample_id",category,predictors))) %>% 
     dplyr::distinct() %>% 
-    dplyr::arrange(sample_id)
+    dplyr::arrange(.data$sample_id)
   
   # Add categorical second-level predictors if applicable
   if(fixed.effect == "categorical") {
@@ -390,10 +394,10 @@ fit_growth <- function(
 
 # Stan model look up helper  ---------------------------------------------------
 
-.extract_stan_file <- function(mod, fixed.effects) {
+.extract_stan_file <- function(mod, fixed.effect) {
   
   # Create file name
-  file <- paste0(mod, "_", fixed.effects, ".stan")
+  file <- paste0(mod, "_", fixed.effect, ".stan")
   
   # Load file path from package structure
   file.path <- system.file(

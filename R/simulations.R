@@ -30,7 +30,7 @@
 #' at-age data based on a von Bertalanffy, Gompetz, or Logistic growth model.
 #' Growth parameters differ based on sampling events using a multivaraite normal
 #' distribution, and users are able to specify if growth parameters differ among
-#' sampling events based on either linear or categorical predictors. The input 
+#' sampling events based on either continuous or categorical predictors. The input 
 #' list must contain the following variables:
 #' 
 #' For all models
@@ -55,7 +55,7 @@
 #'     \item{cor.g.t}{Correlation between scaling and inflection parameters.}
 #'   }
 #'   
-#' For linear second-level effects:
+#' For continuous second-level effects:
 #' \describe{
 #'     \item{mu_Linf}{Population mean of asymptotic length parameter.}
 #'     \item{mu_g}{Population mean of scaling parameter.}
@@ -112,7 +112,7 @@ simulate_length <- function(
   max_age <- sim.input$max_age
   
   # Log transformed parameters. Leave t0 on normal scale for vb model
-  if(fixed.effects != "categorical") {
+  if(fixed.effect != "categorical") {
     mu_log_Linf <- log(sim.input$mu_Linf)
     mu_log_g <- log(sim.input$mu_g)
     if(mod.form != "vb") mu_log_t <- log(sim.input$mu_t)
@@ -126,7 +126,7 @@ simulate_length <- function(
   
   # Mean vector. Estimate means of all categories if using categorical 
   # second level effects 
-  if(fixed.effects != "categorical"){
+  if(fixed.effect != "categorical"){
     mu_vector <- c(mu_log_Linf,mu_log_g,mu_log_t)
   }else{
     mu_vector <- c(
@@ -158,14 +158,14 @@ simulate_length <- function(
   
   ### Simulate second-level fixed effects  ###
   
-  # Linear effects
-  if(fixed.effects == "linear") {
+  # continuous effects
+  if(fixed.effect == "continuous") {
     
     # number of predictors
     k_sim <- length(sim.input$beta_Linf)
     
     # create random predictor data
-    x_sim <- replicate(k_sim, rnorm(n_sites))
+    x_sim <- replicate(k_sim, stats::rnorm(n_sites))
     
     # Create site-specific parameter values
     log_Linf <- log_Linf+ x_sim%*%sim.input$beta_Linf
@@ -174,7 +174,7 @@ simulate_length <- function(
   }
   
   # Categorical effects
-  if(fixed.effects == "categorical") {
+  if(fixed.effect == "categorical") {
     
     # Number of groupings
     n_cat <- length(cat_log_Linf)
@@ -188,7 +188,7 @@ simulate_length <- function(
     }
     
     # Change groupings into design matrix
-    cat_mat <- model.matrix(~ as.factor(cat) - 1)
+    cat_mat <- stats::model.matrix(~ as.factor(cat) - 1)
 
     # Change group means to group effects
     beta_Linf <- cat_log_Linf - mu_vector[1]
@@ -213,7 +213,7 @@ simulate_length <- function(
   # Create site specific length-age data
   sim_list <-apply(param_mat,1,simplify=F,function(x){
     sample_id = rep(x[4],n_ages)
-    age = runif(n_ages,0,max_age)
+    age = stats::runif(n_ages,0,max_age)
     
     # Estimate length base on model
     if(mod.form == "vb") length = x[1] * (1 - exp(-x[2] * (age - x[3])))
@@ -221,7 +221,7 @@ simulate_length <- function(
     if(mod.form == "lg") length = x[1]/(1 + exp(-x[2] * (age - x[3])))
     
     # Add error (normal or students t)
-    if(nu == 0) length <- length + rnorm(n_ages,0,sim.input$sigma_length)
+    if(nu == 0) length <- length + stats::rnorm(n_ages,0,sim.input$sigma_length)
     if(nu > 0) length <- length + ggdist::rstudent_t(n_ages,nu,0,sim.input$sigma_length)
     cbind(sample_id,length,age)
   })
@@ -238,7 +238,7 @@ simulate_length <- function(
   # Create input data
   out <- list(
     N = nrow(sim_df),
-    N_SITES = n_distinct(sim_df[,1]),
+    N_SITES = dplyr::n_distinct(sim_df[,1]),
     LENGTH = sim_df[,2],
     AGE =sim_df[,3],
     ID = sim_df[,1],
@@ -246,8 +246,8 @@ simulate_length <- function(
     LENGTH_M = mean(sim_df[,2])
     )  
   
-  # Linear input
-  if(fixed.effects == "linear"){
+  # continuous input
+  if(fixed.effect == "continuous"){
     out$K <- ncol(x_sim)
     out$X <- x_sim
     out$LENGTH_M
@@ -256,7 +256,7 @@ simulate_length <- function(
   }
   
   # Categorical input
-  if(fixed.effects == "categorical"){
+  if(fixed.effect == "categorical"){
     out$N_CAT <- n_cat
     out$CAT <- cat
   }
@@ -272,7 +272,7 @@ simulate_length <- function(
 #' from Stan growth models using simulated data.
 #' 
 #' @param input Named list providing data for Stan model. Prepared using 
-#' ageLengthSim with the appropriate fixed.effects and mod.form argument.
+#' ageLengthSim with the appropriate fixed.effect and mod.form argument.
 #' @param params Vector containing names of parameter posterior means to 
 #' extract. Must match parameter names in Stan model. See details for all
 #' possible parameters.
@@ -307,7 +307,7 @@ model_sim_test <- function(
   ### Model specific configuration  ###
 
   # model name
-  mod <- paste0(mod.form,"_",fixed.effects,".stan")
+  mod <- paste0(mod.form,"_",fixed.effect,".stan")
   mod_dir <- "stan_scripts"
   
   # growth id
@@ -332,7 +332,9 @@ model_sim_test <- function(
   
   ### Check for sampling issues  ###
   # Check for convergence
-  no.converg <- as.data.frame(out_sum) %>% filter(Rhat > 1.1) %>% nrow()
+  no.converg <- as.data.frame(out_sum) %>% 
+    dplyr::filter(.data$Rhat > 1.1) %>% 
+    nrow()
   
   # check for divergent ts
   # Extract sampler parameters after warmup
@@ -348,7 +350,7 @@ model_sim_test <- function(
   
   ### Do CIs overlap with zero?  ###
   overlap_df <- as.data.frame(out_sum) %>% 
-    mutate(Overlap0 = case_when(
+    dplyr::mutate(Overlap0 = dplyr::case_when(
       `2.5%` < 0 & `97.5%` > 0 ~1,
       T~0
     )) 

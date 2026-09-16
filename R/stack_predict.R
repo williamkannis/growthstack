@@ -105,8 +105,8 @@ stack_predict <- function(
   # distributions based on weight.
   if(stack) {
     stack_df <- stack.df %>% 
-      dplyr::mutate(n_sim = round(sim*stack_wt)) %>% 
-      dplyr::filter(n_sim >0)
+      dplyr::mutate(n_sim = round(sim*.data$stack_wt)) %>% 
+      dplyr::filter(.data$n_sim >0)
   } else{
     
     # Sampling models evenly
@@ -267,7 +267,7 @@ stack_predict <- function(
   # remove temporary prediction id, if applicable
   if(!is.null(out_summary$input_id)){
     out_summary <- out_summary %>% 
-      dplyr::select(-input_id)
+      dplyr::select(-.data$input_id)
   } 
   
   # Rename group_id to appropriate grouping name
@@ -428,7 +428,7 @@ stack_predict <- function(
     if(all(is.null(pred.group),is.null(pred.interval))) {
       pred_input <- data.frame(group_id = 1:max_group) %>% 
         tidyr::crossing(input = pred.input) %>% 
-        dplyr::select(group_id,input)
+        dplyr::select(.data$group_id,.data$input)
       pred_input$input_id <- 1:nrow(pred_input)
     }
     
@@ -437,7 +437,7 @@ stack_predict <- function(
     if(!is.null(pred.group) & is.null(pred.interval)) {
       pred_input <- data.frame(group_id = pred.group) %>% 
         tidyr::crossing(input = pred.input) %>% 
-        dplyr::select(group_id,input)
+        dplyr::select(.data$group_id,.data$input)
       pred_input$input_id <- 1:nrow(pred_input)
     }
     
@@ -455,7 +455,7 @@ stack_predict <- function(
         interval = pred.interval
       ) %>% 
         tidyr::crossing(input = pred.input) %>% 
-        dplyr::select(group_id,interval,input)
+        dplyr::select(.data$group_id,.data$interval,.data$input)
       pred_input$input_id <- 1:nrow(pred_input)
     }
     
@@ -466,7 +466,7 @@ stack_predict <- function(
         tidyr::crossing(
           input = pred.input,
           interval =pred.interval) %>% 
-        dplyr::select(group_id,interval,input)
+        dplyr::select(.data$group_id,.data$interval,.data$input)
       pred_input$input_id <- 1:nrow(pred_input)
     }
   } else {
@@ -584,7 +584,7 @@ stack_predict <- function(
     out_df <- input.df %>% 
       dplyr::left_join(
         model.out,
-        by = dplyr::join_by(group_id)
+        by = dplyr::join_by(.data$group_id)
         )
   }  
   
@@ -633,7 +633,10 @@ stack_predict <- function(
   # Add prediction columns to data
   names(preds) <- paste0(output.var,"_pred")
   dplyr::bind_cols(out_df,preds) %>% 
-    dplyr::rename_with(~c(input.var),c(input)) %>% 
-    dplyr::select(-Linf,-g,-inf)
+    dplyr::rename_with(
+      ~c(input.var),
+      dplyr::all_of("input")
+      ) %>% 
+    dplyr::select(-.data$Linf,-.data$g,-.data$inf)
 }
 

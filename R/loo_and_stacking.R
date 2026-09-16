@@ -18,7 +18,7 @@ loo_batch <- function(out.files = NULL ,out.dir,mc.cores =1) {
   
   # If only model directory provided, load all models
   if (is.null(out.files)){
-    out.files <- list.files(model.dir)
+    out.files <- list.files(out.dir)
   }
   
   # Batch estimation of loo for each model
@@ -70,9 +70,9 @@ stack_format <- function(loo_list,cores) {
   # Change stack_wt into dataframe
   stack_df <- as.data.frame(stack) %>% 
     tibble::rownames_to_column("model") %>% 
-    dplyr::rename(stack_wt = x) %>% 
-    dplyr::arrange(desc(stack_wt)) 
-  
+    dplyr::rename(stack_wt = .data$x) %>% 
+    dplyr::arrange(dplyr::desc(.data$stack_wt)) 
+
   # Calculate cumulative model weights
   cum_wt = 0
   for (i in 1:nrow(stack_df)){

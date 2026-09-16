@@ -33,14 +33,14 @@ stan_diag <- function(mod.out,k_limit = 0.7){
   mod.summary <- as.data.frame(rstan::summary(mod.out)[[1]])
 
   # number of parameters that did not converge (anything >0 is unacceptable)
-  no.conv <- nrow(mod.summary %>% dplyr::filter(Rhat > 1.1))
+  no.conv <- nrow(mod.summary %>% dplyr::filter(.data$Rhat > 1.1))
   
   # Bulk effective sample size
-  low.eff <- nrow(mod.summary %>% dplyr::filter(n_eff < 400))
+  low.eff <- nrow(mod.summary %>% dplyr::filter(.data$n_eff < 400))
   
   # Check for sampler issues
-  n.diverg <- get_num_divergent(mod.out)
-  n.max.tree.depth <- get_num_max_treedepth(mod.out)
+  n.diverg <- rstan::get_num_divergent(mod.out)
+  n.max.tree.depth <- rstan::get_num_max_treedepth(mod.out)
   
   # Pareto K for loo estimation
   high_k <- .loo_diag_helper(

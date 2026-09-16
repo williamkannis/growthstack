@@ -23,8 +23,8 @@ linear_stack_predict <- function(stack.df, mod.dir, sim,sum.fun){
   
   # Retain models with 
   stack <- stack.df %>% 
-    dplyr::mutate(n_sim = round(sim*stack_wt)) %>% 
-    dplyr::filter(n_sim >0)
+    dplyr::mutate(n_sim = round(sim*.data$stack_wt)) %>% 
+    dplyr::filter(.data$n_sim >0)
   
   # Load it model parameters
   mods<- stack$model
