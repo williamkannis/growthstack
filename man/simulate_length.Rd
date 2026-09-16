@@ -23,7 +23,7 @@ Bertalanffy, "gz" - Gompertz, "lg" - Logistic). Default is c("vb","gz","lg).}
 distributions of lengths. If zero is selected (default), then length error is
 modeled using a normal distributions}
 
-\item{fixed.effect}{Character ("categorical", "linear","random") indicating
+\item{fixed.effect}{Character ("categorical", "continuous","random") indicating
 the type of second level effects present in model. Default is no second-level
 effects (random).}
 
@@ -43,7 +43,7 @@ Users supply a list of growth model parameters to simulate length-
 at-age data based on a von Bertalanffy, Gompetz, or Logistic growth model.
 Growth parameters differ based on sampling events using a multivaraite normal
 distribution, and users are able to specify if growth parameters differ among
-sampling events based on either linear or categorical predictors. The input
+sampling events based on either continuous or categorical predictors. The input
 list must contain the following variables:
 
 For all models
@@ -68,7 +68,7 @@ parameters.}
 \item{cor.g.t}{Correlation between scaling and inflection parameters.}
 }
 
-For linear second-level effects:
+For continuous second-level effects:
 \describe{
 \item{mu_Linf}{Population mean of asymptotic length parameter.}
 \item{mu_g}{Population mean of scaling parameter.}

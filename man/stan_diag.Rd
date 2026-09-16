@@ -4,7 +4,7 @@
 \alias{stan_diag}
 \title{Batch Stan model diagnostics}
 \usage{
-stan_diag(mod.out, k_limit)
+stan_diag(mod.out, k_limit = 0.7)
 }
 \arguments{
 \item{mod.out}{stanfit object}

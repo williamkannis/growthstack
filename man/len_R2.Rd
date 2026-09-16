@@ -4,7 +4,7 @@
 \alias{len_R2}
 \title{R-squared estimation for length-at-age predictions}
 \usage{
-len_R2(stack.df, mod.dir, sim, sum.fun, data, stack)
+len_R2(stack.df, mod.dir, sim, sum.fun, residuals = F, data, stack, ...)
 }
 \arguments{
 \item{stack.df}{Data.frame containing model file names and stacking weights.
@@ -19,15 +19,21 @@ range of predictor variables.}
 \item{sum.fun}{Character ("mean" or "median) for type of summary
 statistic of posterior distribution. Default is mean.}
 
+\item{residuals}{T or F. Return data.frame containing prediction residuals?}
+
 \item{data}{Data.frame containing actual length-at-age data with appropriate
 sampling id. Must have columns: age, length, and sample_id.}
 
 \item{stack}{T or F. Create model stacked predictions or parameter estimates
 (T), or candidate model specific outputs (F). Default is FALSE}
+
+\item{...}{Additional augments passed to \link{stack_predict}.}
 }
 \value{
 Data.frame containing r-squared and adjusted r-squared for each
-model
+model. If 'residuals' == TRUE, returns named list containing r-squared
+data.frame, and a data.frame containing predicted values and residuals for
+each model.
 }
 \description{
 Estimates r-squared of length predictions of all candidate or

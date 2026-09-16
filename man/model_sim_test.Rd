@@ -8,7 +8,7 @@ model_sim_test(input, params, mod.form, fixed.effect = "random", ...)
 }
 \arguments{
 \item{input}{Named list providing data for Stan model. Prepared using
-ageLengthSim with the appropriate fixed.effects and mod.form argument.}
+ageLengthSim with the appropriate fixed.effect and mod.form argument.}
 
 \item{params}{Vector containing names of parameter posterior means to
 extract. Must match parameter names in Stan model. See details for all
@@ -17,7 +17,7 @@ possible parameters.}
 \item{mod.form}{Vector containing selected growth model forms ("vb" - von
 Bertalanffy, "gz" - Gompertz, "lg" - Logistic). Default is c("vb","gz","lg).}
 
-\item{fixed.effect}{Character ("categorical", "linear","random") indicating
+\item{fixed.effect}{Character ("categorical", "continuous","random") indicating
 the type of second level effects present in model. Default is no second-level
 effects (random).}
 

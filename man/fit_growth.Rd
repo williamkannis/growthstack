@@ -14,7 +14,7 @@ fit_growth(
   scale = T,
   linear.predictions = F,
   pred.len = 100,
-  sp = sp,
+  sp,
   age.df,
   len.df = NULL,
   ...,
@@ -30,7 +30,7 @@ Bertalanffy, "gz" - Gompertz, "lg" - Logistic). Default is c("vb","gz","lg).}
 distributions of lengths. If zero is selected (default), then length error is
 modeled using a normal distributions}
 
-\item{fixed.effect}{Character ("categorical", "linear","random") indicating
+\item{fixed.effect}{Character ("categorical", "continuous","random") indicating
 the type of second level effects present in model. Default is no second-level
 effects (random).}
 
@@ -39,18 +39,18 @@ individual sampling event (e.g site and date) used for random effects. Used
 to create a single sampling identifier.}
 
 \item{category}{Name of column containing categorical predictor variable.
-Should contain category as a factor. Only necessary if fixed.effects ==
-"category" Default is NULL.}
+Should contain category as a factor. Only necessary if fixed.effect ==
+"categorical" Default is NULL.}
 
 \item{predictors}{Vector with column names of chosen predictor variables.
-Only necessary if fixed.effects == "linear". Default is NULL}
+Only necessary if fixed.effect == "continuous". Default is NULL}
 
 \item{scale}{T or F: scale and center predictors? Only necessary if
-fixed.effects == "linear". Default is T.}
+fixed.effect == "continuous". Default is T.}
 
 \item{linear.predictions}{T or F. Create predictions of growth parameters and
 and rates across the range of linear predictor variables? Only possible if
-fixed.effects == "linear". Default is F.}
+fixed.effect == "continuous". Default is F.}
 
 \item{pred.len}{Number of predictions to make along range of predictor
 variables. Only necessary if linear.predictions == T. Default is 100.}
@@ -61,7 +61,7 @@ variables. Only necessary if linear.predictions == T. Default is 100.}
 dates, and sites. Must have columns for species name (species), individual
 lengths (length), and ages (age). Additional columns for groupings are
 required for random effects. If second level fixed effects of selected, data
-must include columns for categorical groupings, or linear predictors.}
+must include columns for categorical groupings, or continuous predictors.}
 
 \item{len.df}{Data.frame with fish size structure. Used for average length
 for inst.growth comparisons across groupings. Must have columns for species
@@ -100,15 +100,15 @@ parameter von Bertalanffy, Gompertz, and logistic growth forms. Length can
 be modeled using normally distributed errors (nu = 0) or using the student's
 T distribution with user specified degrees of freedom (nu > 0). MORE DETAILS
 
-Supported effect structures are random effects only, categorical, or linear
+Supported effect structures are random effects only, categorical, or continuous
 second-level effect predictors. In all models, each growth parameter can
 vary based on random grouping (e.g. sampling event). For categorical second
 level effects, random groupings are classified into higher level groups, which
-can vary in mean growth parameters. For the linear second-level effects,
+can vary in mean growth parameters. For the continuous second-level effects,
 differences in random grouping growth parameters are explained by continuous
 predictors.
 
-The Linear second-level effect model can produce asymptotic length and
+The continuous second-level effect model can produce asymptotic length and
 length-standardized instantaneous growth predictions of a user-specified
 length along the entire range of range of each predictor variable.
 
@@ -119,8 +119,8 @@ user-specified groupings. Mean size of that species across sites is estimated
 using an optional size structure data.frame for length-standardized
 instantaneous growth estimates.
 
-If selected, categorical or linear second-level predictor variables are
+If selected, categorical or continuous second-level predictor variables are
 prepared. For categorical data, categories are transformed into a numeric
-categorical id. For linear predictors, specified predictor variables are
+categorical id. For continuous predictors, specified predictor variables are
 subset by group id, and optionally scaled and centered.
 }
