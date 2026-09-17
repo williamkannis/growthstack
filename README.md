@@ -4,6 +4,8 @@
 # growthstack
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/williamkannis/growthtools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/YOUR-USERNAME/growthtools/actions/workflows/R-CMD-check.yaml)
+
 <!-- badges: end -->
 
 The goal of growthstack is to …
