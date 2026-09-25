@@ -241,6 +241,7 @@ simulate_length <- function(
   
   if(output == "data.frame") {
     out <- sim_df
+    out$species <- "sim"
     
     # continuous input
     if(fixed.effect == "continuous"){
