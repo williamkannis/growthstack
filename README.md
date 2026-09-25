@@ -140,3 +140,8 @@ $$\mu = \log \begin{pmatrix} \bar{L}_{\infty} + \gamma_{1,k} \times \text{PC}_{k
 
 Where γ<sub>1-3,h</sub> are the fixed effects coefficients for
 environmental PC *k* on the three growth parameters.
+
+## License
+
+The code in this repository is licensed under the [MIT
+License](LICENSE).
