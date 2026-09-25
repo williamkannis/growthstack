@@ -25,6 +25,8 @@
 #' @inheritParams fit_growth
 #' @param equal.cat T or F. If categorical fixed effects are simulated, should
 #' each category be represented by an equal number of sites. Default is T.
+#' @param output "data.frame" or "list". DOes function output a data.frame, or
+#' stan input list
 #' 
 #' @details Users supply a list of growth model parameters to simulate length-
 #' at-age data based on a von Bertalanffy, Gompetz, or Logistic growth model.
@@ -101,7 +103,8 @@ simulate_length <- function(
     mod.form,
     nu=0,
     fixed.effect="random",
-    equal.cat=T
+    equal.cat=T,
+    output = c("data.frame","list")
     ) {
   
   ### Prepare input data  ###
@@ -229,37 +232,70 @@ simulate_length <- function(
   ### Prepare data for stan input  ###
   
   # Bind simulated lengths into one data.frame
-  sim_df <-do.call(rbind,sim_list)
+  sim_df <-as.data.frame(do.call(rbind,sim_list))
   
   # remove negative lengths
-  sim_df <- sim_df[sim_df[,2] > 0,]
-  plot(sim_df[,2]~sim_df[,3])
+  sim_df <- sim_df[sim_df$length > 0,]
+  # plot(sim_df[,2]~sim_df[,3])
+  
+  if(output == "data.frame") {
+    out <- sim_df
+    
+    # continuous input
+    if(fixed.effect == "continuous"){
+      x_df <- as.data.frame(x_sim)
+      colnames(x_df) <- gsub("V","X",colnames(x_df))
+      x_df$sample_id <- 1:n_sites
+      
+      out <- out %>% 
+        dplyr::left_join(
+          x_df,
+          by = dplyr::join_by(.data$sample_id))
+    }
+    
+    # Categorical input
+    if(fixed.effect == "categorical"){
+      cat_df <- data.frame(
+        sample_id = 1:n_sites,
+        cat = cat
+      )
+      
+      out <- out %>% 
+        dplyr::left_join(
+          cat_df,
+          by = dplyr::join_by(.data$sample_id))
+    }
+  }
   
   # Create input data
-  out <- list(
-    N = nrow(sim_df),
-    N_SITES = dplyr::n_distinct(sim_df[,1]),
-    LENGTH = sim_df[,2],
-    AGE =sim_df[,3],
-    ID = sim_df[,1],
-    NU=nu,
-    LENGTH_M = mean(sim_df[,2])
+  if(output == "list") {
+    out <- list(
+      N = nrow(sim_df),
+      N_SITES = dplyr::n_distinct(sim_df$sample_id),
+      LENGTH = sim_df$length,
+      AGE =sim_df$age,
+      ID = sim_df$sample_id,
+      NU=nu,
+      LENGTH_M = mean(sim_df$length)
     )  
-  
-  # continuous input
-  if(fixed.effect == "continuous"){
-    out$K <- ncol(x_sim)
-    out$X <- x_sim
-    out$LENGTH_M
-    out$N_PRED <- 0
-    out$PRED_X <- matrix(nrow=0,ncol=ncol(x_sim))
+    
+    # continuous input
+    if(fixed.effect == "continuous"){
+      out$K <- ncol(x_sim)
+      out$X <- x_sim
+      out$LENGTH_M
+      out$N_PRED <- 0
+      out$PRED_X <- matrix(nrow=0,ncol=ncol(x_sim))
+    }
+    
+    # Categorical input
+    if(fixed.effect == "categorical"){
+      out$N_CAT <- n_cat
+      out$CAT <- cat
+    }
   }
   
-  # Categorical input
-  if(fixed.effect == "categorical"){
-    out$N_CAT <- n_cat
-    out$CAT <- cat
-  }
+
   # return sim data
   out
 }
