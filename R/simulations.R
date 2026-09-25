@@ -108,6 +108,7 @@ simulate_length <- function(
     ) {
   
   ### Prepare input data  ###
+  output <- match.arg(output)
   
   # Data structure
   n_sites <- sim.input$n_sites
