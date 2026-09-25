@@ -252,7 +252,7 @@ simulate_length <- function(
       out <- out %>% 
         dplyr::left_join(
           x_df,
-          by = dplyr::join_by(.data$sample_id))
+          by = "sample_id")
     }
     
     # Categorical input
@@ -265,7 +265,8 @@ simulate_length <- function(
       out <- out %>% 
         dplyr::left_join(
           cat_df,
-          by = dplyr::join_by(.data$sample_id))
+          by = "sample_id"
+          )
     }
   }
   
