@@ -170,5 +170,3 @@ generated quantities{
    }
   }
  }
- 
- 
