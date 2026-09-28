@@ -9,7 +9,8 @@ simulate_length(
   mod.form,
   nu = 0,
   fixed.effect = "random",
-  equal.cat = T
+  equal.cat = T,
+  output = c("data.frame", "list")
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ effects (random).}
 
 \item{equal.cat}{T or F. If categorical fixed effects are simulated, should
 each category be represented by an equal number of sites. Default is T.}
+
+\item{output}{"data.frame" or "list". DOes function output a data.frame, or
+stan input list}
 }
 \value{
 Named list containing Stan model input data for specified growth
