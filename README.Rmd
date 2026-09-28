@@ -20,7 +20,8 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-The goal of growthstack is to ...
+Tools to model growth using von Bertalanffy, Gompertz, and Logistic Bayesian hierarchical models, and to perform Bayesian model stacking. Many functions are
+wrappers of functions from the 'rstan' and 'loo' packages.
 
 ## Installation
 
@@ -28,49 +29,506 @@ You can install the development version of growthstack from [GitHub](https://git
 
 ``` r
 # install.packages("pak")
-pak::pak("williamkannis/stacked_growth_modelling")
+pak::pak("williamkannis/growthstack")
 ```
 
-## Example
+## Single model inference
 
-This is a basic example which shows you how to solve a common problem:
+### Random effect model
 
-```{r example}
-#library(growthstack)
+Simulates and fits length-at-age data with von Bertalanffy model, allowing 
+parameters to vary by sampling groups.
+
+Simulate growth data with random groupings
+```{r sim-ran}
+library(growthstack)
+
+# Prepare simulation inputs
+input_list_ran <- list(
+  
+  # Sample size
+  n_sites = 18,
+  n_ages = 25,
+  max_age = 200,
+  
+  # Length varaince
+  sigma_length = 1,
+  
+  # Random effect means
+  mu_Linf =32,  
+  mu_g = 0.03,
+  mu_t = -9,
+  
+  # Random effect variance and correlations
+  tau = c(0.02,0.03,2),  
+  cor.Linf.g =-.49,
+  cor.Linf.t = .05,
+  cor.g.t = 0.2
+)
+
+# Data simulation
+data_ran <- simulate_length(
+  sim.input = input_list_ran,
+  mod.form = "vb",
+  nu=0,
+  fixed.effect="random",
+  equal.cat=T
+) 
+
+# View data
+plot(
+  length~age,
+  data_ran
+  )
+
+```
+
+Fit model
+```{r fit-ran, warning=FALSE, message=FALSE, results="hide"}
+
+# Run model
+out_list_ran <- fit_growth(
+  mod.form = "vb",
+  nu=0,
+  fixed.effect = "random",
+  sample.groups = "sample_id",
+  sp = "sim",   
+  age.df = data_ran, 
+  iter = 5000,
+  warmup = 2000,
+  chains =4,
+  cores = 4,
+  refresh = 0,
+  control = list(adapt_delta = .97), 
+  parallel = F
+)
+
+# Extract model result
+fit_ran <- out_list_ran$model_out$vb_random
+
+```
+
+Print some results
+```{r outputs-ran}
+# Print results for select paramters
+params_ran <- c("mu_Linf","mu_g1","mu_t0","tau","sigma_length")
+print(fit_ran,pars = params_ran)
+
+
+```
+
+Create length-at-age curves
+
+### Categorical effects model
+
+Simulates and fits length-at-age data with von Bertalanffy model, allowing 
+parameters to vary by sampling groups with variation in growth parameters
+explained by categorical groupings
+
+Simulate growth data with categorical effects
+```{r sim-cat}
+library(growthstack)
 ## basic example code
+
+# Prepare simulation inputs
+input_list_cat <- list(
+  
+  # Sample size
+  n_sites = 18,
+  n_ages = 25,
+  max_age = 200,
+  
+  # Length varaince
+  sigma_length = 1,
+  
+  # Random effect means by effect category
+  cat_Linf =c(28,32,36),
+  cat_g =c(.03,.01,.03),
+  cat_t =c(-9,-2,-11),
+  
+  # Random effect variance and correlations
+  tau = c(0.02,0.03,2),  
+  cor.Linf.g =-.49,
+  cor.Linf.t = .05,
+  cor.g.t = 0.2
+)
+
+# Data simulation
+data_cat <- simulate_length(
+  sim.input = input_list_cat,
+  mod.form = "vb",
+  nu=0,
+  fixed.effect="categorical",
+  equal.cat=T
+) 
+
+# View data
+cat_color <- c("firebrick", "dodgerblue", "forestgreen")
+plot(
+  length~age,
+  data_cat, 
+  col = cat_color[data_cat$cat]
+  )
+
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+Fit model
+```{r fit-cat, warning=FALSE, message=FALSE, results="hide"}
 
-```{r cars}
-summary(cars)
+# Run model
+out_list_cat <- fit_growth(
+  mod.form = "vb",
+  nu=0,
+  fixed.effect = "categorical",
+  sample.groups = "sample_id",
+  category = "cat",
+  sp = "sim",   
+  age.df = data_cat, 
+  len.df = NULL,
+  iter = 5000,
+  warmup = 2000,
+  chains =4,
+  cores =4,
+  control = list(adapt_delta = .97), 
+  refresh = 0,
+  parallel = F
+)
+
+# Extract model result
+fit_cat <- out_list_cat$model_out$vb_categorical
+
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+Print some results
+```{r outputs-cat}
 
-You can also embed plots, for example:
+# Print results for select parameters
+params_cat <- c("cat_Linf","cat_g1","cat_t0","tau","sigma_length")
+print(fit_cat,pars = params_cat)
 
-```{r pressure, echo = FALSE}
-plot(pressure)
+
 ```
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+Create categorical length- and growth-at-age curves
 
 
-## Usage
+### Continuous effects model
+
+Simulates and fits length-at-age data with von Bertalanffy model, allowing 
+parameters to vary by sampling groups with variation in growth parameters
+explained by sample-level continuous predictors
+
+Simulate growth data with continuous effects
+```{r sim-cont}
+library(growthstack)
+## basic example code
+
+# Prepare simulation inputs
+input_list_cont <- list(
+  
+  # Sample size
+  n_sites = 18,
+  n_ages = 25,
+  max_age = 200,
+  
+  # Length variance
+  sigma_length = 1,
+  
+  # 2nd-level effect coefficients
+  beta_Linf =c(-.09,0,.1),
+  beta_g =c(.09,-.01,.08),
+  beta_t =c(0,.03,-.08),
+  
+  # Random effect means
+  mu_Linf =32,  
+  mu_g = 0.03,
+  mu_t = -9,
+  
+  # Random effect variance and correlations
+  tau = c(0.02,0.03,2),  
+  cor.Linf.g =-.49,
+  cor.Linf.t = .05,
+  cor.g.t = 0.2
+)
+
+# Data simulation
+data_cont <- simulate_length(
+  sim.input = input_list_cont,
+  mod.form = "vb",
+  nu=0,
+  fixed.effect="continuous"
+) 
+
+# View data
+
+cont_cols <- hcl.colors(100, "Viridis")
+cont_color_indices <- cut(data_cont$X1, breaks = 100, labels = FALSE)
+
+plot(
+  length ~ age,
+  data = data_cont,
+  col = cont_cols[cont_color_indices],
+  pch = 16
+)
+
+```
+
+Fit model
+```{r fit-cont, warning=FALSE, message=FALSE, results="hide"}
+
+# Run model
+out_list_cont <- fit_growth(
+  mod.form = "vb",
+  nu=0,
+  fixed.effect = "continuous",
+  sample.groups = "sample_id",
+  predictors = c("X1","X2","X3"),
+  sp = "sim",   
+  age.df = data_cont, 
+  iter = 5000,
+  warmup = 2000,
+  chains =4,
+  cores =4,
+  control = list(adapt_delta = .97), 
+  refresh = 0,
+  parallel = F
+)
+
+# Extract model result
+fit_cont <- out_list_cont$model_out$vb_continuous
+
+```
+
+Print some results
+```{r outputs-con}
+
+# Print results for select parameters
+params_cont <- c(
+  "beta_Linf","beta_g1","beta_t0",
+  "mu_Linf","mu_g1","mu_t0","tau","sigma_length"
+  )
+print(fit_cont,pars = params_cont)
 
 
-### Simulating data
+```
 
 
-### Fitting growth models
+## Multi-model inference
+
+### Fit multiple model forms
+
+Fit model using all three growth forms with random effect only models
+```{r fit-multiple, warning=FALSE, message=FALSE, results="hide"}
+
+# Run model
+out_list <- fit_growth(
+  mod.form = c("vb","gz","lg"),
+  nu=0,
+  fixed.effect = "random",
+  sample.groups = "sample_id",
+  sp = "sim",   
+  age.df = data_ran, 
+  iter = 5000,
+  warmup = 2000,
+  chains =4,
+  cores =4,
+  control = list(adapt_delta = .97), 
+  refresh = 0,
+  parallel = F
+)
+
+# Extract model result
+fit_vb <- out_list$model_out$vb_random
+fit_gz <- out_list$model_out$gz_random
+fit_lg <- out_list$model_out$lg_random
+```
+
+Print some results for each model
+```{r outputs-multiple}
+
+# View von Bertalanffy outputs
+params_vb <- c("mu_Linf","mu_g1","mu_t0","tau","sigma_length")
+print(fit_vb,pars = params_vb)
+
+# View gompertz outputs
+params_gz <- c("mu_Linf","mu_g2","mu_ti","tau","sigma_length")
+print(fit_gz,pars = params_gz)
+
+# View Logistic outputs
+params_lg <- c("mu_Linf","mu_g3","mu_ti","tau","sigma_length")
+print(fit_lg,pars = params_lg)
+
+```
+
+Export results
+```{r export-results}
+# Create a temporary directory for model outputs
+mod_dir <- file.path(tempdir(), "growth_models")
+dir.create(mod_dir, showWarnings = FALSE)
+
+# Export models
+lapply(1:length(out_list$model_out),function(x){
+  mod <- out_list$model_out[[x]]
+  name <- names(out_list$model_out)[x]
+  file_name <- paste0(
+    name,
+    ".rds"
+  )
+  saveRDS(mod,file.path(mod_dir,file_name))
+  file_name
+})
+
+```
+
+### Model selection and averaging
+
+Model selection via Leave one out cross validation (LOO-CV)
+```{r loo-example}
+
+# Perform LOO on each model
+loo_list <- loo_batch(
+  out.dir = mod_dir,
+  mc.cores = 4
+)
+
+# Compare model based on LOO results
+loo::loo_compare(loo_list)
+```
+
+Model averaging via model stacking
+```{r stack-example}
+
+# estimate model stacking weigths based LOO-CV
+stack_df <- stack_format(
+  loo_list =  loo_list,
+  cores = 4
+)
+stack_df
+```
+
+### Model stacked parameters
+```{r stack-param}
+stack_predict(
+    stack.df = stack_df,
+    mod.dir = mod_dir,
+    type = "parameter",
+    group.id="mu",
+    sim = 1000,
+    stack=T,
+    summarize=T,
+    sum.fun = "median"
+)
+```
+
+### Model stacked curves
+Length-at-age curve
+```{r stack-len}
+# Input ages for predictions
+pred_input <- 1:input_list_ran$max_age
+
+# Predict lengths across age using model outputs
+pred_len_df <- stack_predict(
+    stack.df = stack_df,
+    mod.dir = mod_dir,
+    type = "prediction",
+    group.id="mu",
+    sim = 1000,
+    stack=T,
+    pred.input = pred_input,
+    input.var = "age",
+    output.var = c("length"),
+    summarize=T,
+    sum.fun="median",
+    parallel = T,
+    mc.cores = 4
+)
+
+plot(
+  pred_len_df$age,
+  pred_len_df$length_pred_median,
+  type = "n",
+  xlab = "Age",
+  ylab = "Length"
+)
+
+# Observed data
+points(
+  data_ran$age,
+  data_ran$length,
+  pch = 16, 
+  col ="grey90"
+)
+
+# 95% interval
+polygon(
+  c(pred_len_df$age, rev(pred_len_df$age)),
+  c(pred_len_df$length_pred_lwr, rev(pred_len_df$length_pred_upr)),
+  col = "grey90",
+  border = NA
+)
+
+# Predicted mean
+lines(
+  pred_len_df$age,
+  pred_len_df$length_pred_median,
+  lwd = 2
+)
 
 
-### Indivudal model predictions
+
+```
+
+Growth-at-age curve
+```{r stack-growth}
+
+# Predict growth across age using model outputs
+pred_grow_df <- stack_predict(
+    stack.df = stack_df,
+    mod.dir = mod_dir,
+    type = "prediction",
+    group.id="mu",
+    sim = 1000,
+    stack=T,
+    pred.input = pred_input,
+    input.var = "age",
+    output.var = c("growth"),
+    summarize=T,
+    sum.fun="median",
+    parallel = T,
+    mc.cores = 4
+)
+
+plot(
+  pred_grow_df$age,
+  pred_grow_df$growth_pred_median,
+  type = "n",
+  xlab = "Age",
+  ylab = "Length"
+)
+
+# 95% interval
+polygon(
+  c(pred_grow_df$age, rev(pred_grow_df$age)),
+  c(pred_grow_df$growth_pred_lwr, rev(pred_grow_df$growth_pred_upr)),
+  col = "grey90",
+  border = NA
+)
+
+# Predicted mean
+lines(
+  pred_grow_df$age,
+  pred_grow_df$growth_pred_median,
+  lwd = 2
+)
+
+```
 
 
-### Stacked model predictions
+### Misc. Utilities
 
+## Model diagonstics
+
+## Result summaries
 
 ## Growth models
 
@@ -149,5 +607,5 @@ PC *k* on the three growth parameters.
 ## License
 
 The code in this repository is licensed under the
-[MIT License](LICENSE).
+[MIT License](LICENSE.md).
 
