@@ -368,6 +368,10 @@ stack_predict <- function(
     stop(paste0('posterior draws not found for ',param.group))
   }
   
+  if(!is.array(out)) {
+    stop(paste0('posterior draws must in array format'))
+  }
+  
   # transform to matrix if ony one group (e.g. mu) for consistent formatting
   if(length(dim(out)) == 1) out <- matrix(out)
   
