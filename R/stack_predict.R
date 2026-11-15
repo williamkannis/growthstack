@@ -348,7 +348,7 @@ stack_predict <- function(
   if(!group.id %in% c("mu","site","cat")) {
     stop('group.id must be "mu", "site", or "cat"')
   }
-  if(params %in% c("Linf","g1","g2","g3","t0","ti")) {
+  if(!params %in% c("Linf","g1","g2","g3","t0","ti")) {
     stop('params must be "Linf","g1","g2","g3","t0", or "ti"')
   }
   
@@ -372,7 +372,7 @@ stack_predict <- function(
     stop(paste0('posterior draws must in array format'))
   }
   
-  # transform to matrix if ony one group (e.g. mu) for consistent formatting
+  # transform to matrix if only one group (e.g. mu) for consistent formatting
   if(length(dim(out)) == 1) out <- matrix(out)
   
   # return parameter matrix
