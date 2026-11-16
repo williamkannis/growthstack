@@ -313,7 +313,7 @@ test_that(".prep_stan_data outputs have correct number of items",{
 #   linear.predictions = F,  
 #   pred.len = 100)
 
-test_that(".prep_stan_data returns predicotr data when specified",{
+test_that(".prep_stan_data returns predictor data when specified",{
   df <- .data_prep_test_helper()
   prep <- .prep_stan_data(
     sp = "a", 
