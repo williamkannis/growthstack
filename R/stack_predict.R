@@ -348,7 +348,7 @@ stack_predict <- function(
   if(!group.id %in% c("mu","site","cat")) {
     stop('group.id must be "mu", "site", or "cat"')
   }
-  if(!params %in% c("Linf","g1","g2","g3","t0","ti")) {
+  if(any(!params %in% c("Linf","g1","g2","g3","t0","ti"))) {
     stop('params must be "Linf","g1","g2","g3","t0", or "ti"')
   }
   
